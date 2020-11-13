@@ -117,7 +117,7 @@ def lcg(modulo, a, b, aleatorio):
 # l = tamanho da amostra
 # tempo = sempre em 10^tempo
 
-def do_deposicao(l=200, tempo_fim = 0, tipo_deposicao=0, grafico_instantaneo=False, aleatorio=0):
+def do_deposicao(l_deposicao_amostra_individual, l=200, tempo_fim = 0, tipo_deposicao=0, grafico_instantaneo=False, aleatorio=0, amostras_independentes = 0):
 
     tempo_instantaneo = 25
     max_tempo_instantaneo = 150
@@ -127,13 +127,11 @@ def do_deposicao(l=200, tempo_fim = 0, tipo_deposicao=0, grafico_instantaneo=Fal
     b = 453816693
     #aleatorio = lcg(m, a, b, aleatorio)
 
-    amostras_independentes = 1
-
     l_instantaneo = []
 
     deposicao = np.zeros(l + 1)
-    #l_deposicao_amostra_individual = np.zeros((tempo_fim, l + 1), dtype='uint8')
-    l_deposicao_amostra_individual = []
+    #l_deposicao_amostra_individual = np.zeros((tempo_fim, l), dtype='f2')
+    #l_deposicao_amostra_individual = []
     contador = 0
     contador_amostra = 0
 
@@ -158,10 +156,11 @@ def do_deposicao(l=200, tempo_fim = 0, tipo_deposicao=0, grafico_instantaneo=Fal
                 l_instantaneo.append(deposicao.copy())
                 contador_amostra = 0
 
-        l_deposicao_amostra_individual.append(deposicao.copy())
+        l_deposicao_amostra_individual[tf] = l_deposicao_amostra_individual[tf] + (rugosidade(deposicao) / amostras_independentes)
 
         #contador = contador + 1
         contador_amostra = contador_amostra + 1
+    #print(l_deposicao_amostra_individual)
 
     """
         #média entre as amostras
@@ -218,11 +217,13 @@ def rugosidade_media_amostras(l_rugosidade):
     return l_rugosidade_media
 
 
-def cria_csv(arr_amostras_media, tipo_deposicao):
+def cria_csv(l_rugosidade, tipo_deposicao):
 
+    """
     l_rugosidade = []
     for i in range(len(arr_amostras_media)):
         l_rugosidade.append(rugosidade(arr_amostras_media[i]))
+    """
 
     titulo_csv = 'rugosidade_'+tipo_deposicao
 
@@ -281,24 +282,24 @@ def media_amostras(l_deposito, arr_amostras_media, amostras_independentes):
 
 
 #amostas independentes. Para 1000 amostras, basta elevar 10^3
-amostras_independentes = int(np.power(1, 3))
+amostras_independentes = int(np.power(10, 3))
 
 #Tempo de cada substrato
 tempo_1600 = np.power(10, 6)
 tempo_800 = np.power(10, 5)
 tempo_400 = np.power(10, 5)
-tempo_200 = 11500
-
+tempo_200 = 12000
 
 l_1600 = 1600
 l_800 = 800
 l_400 = 400
 l_200 = 200
 
-arr_amostras_media_1600 = np.zeros((tempo_1600, l_1600), dtype='f2')
-arr_amostras_media_800 = np.zeros((tempo_800, l_800), dtype='f2')
-arr_amostras_media_400 = np.zeros((tempo_400, l_400), dtype='f2')
-arr_amostras_media_200 = np.zeros((tempo_200, l_200), dtype='f2')
+#arr_amostras_media_1600 = np.zeros((tempo_1600, l_1600), dtype='f2')
+#arr_amostras_media_800 = np.zeros((tempo_800, l_800), dtype='f2')
+#arr_amostras_media_400 = np.zeros((tempo_400, l_400), dtype='f2')
+arr_amostras_media_200 = np.zeros((tempo_200), dtype='f2')
+arr_amostras_media_200_db = np.zeros((tempo_200), dtype='f2')
 
 m = np.power(2, 31)
 a = 843314861
@@ -329,12 +330,15 @@ for i in range(amostras_independentes):
     arr_amostras_media_400 = media_amostras(l_da_deposito, arr_amostras_media_400, amostras_independentes)
     """
 
-    print(str(i)+' amostra 200')
+    print(str(i)+' amostra 200 DARS')
+    #l_da_instantaneo = None
+    #l_da_deposito = None
+    l_da_instantaneo, arr_amostras_media_200, aleatorio = do_deposicao(arr_amostras_media_200, l_200, tempo_200, 1, False, aleatorio, amostras_independentes)
 
-    l_da_instantaneo = None
-    l_da_deposito = None
-    l_da_instantaneo, l_da_deposito, aleatorio = do_deposicao(l_200, tempo_200, 1, False, aleatorio)
-    arr_amostras_media_200 = media_amostras(l_da_deposito, arr_amostras_media_200, amostras_independentes)
+    print(str(i)+' amostra 200 DB')
+    #l_da_instantaneo = None
+    #l_da_deposito = None
+    l_da_instantaneo, arr_amostras_media_200_db, aleatorio = do_deposicao(arr_amostras_media_200_db, l_200, tempo_200, 2, False, aleatorio, amostras_independentes)
 
 
 #GERA TODOS OS CSVS
@@ -343,10 +347,11 @@ for i in range(amostras_independentes):
 #cria_csv(arr_amostras_media_800, 'DEPOSICAO_ALEATORIA_RELAXACAO_SUPERFICIAL_800')
 #cria_csv(arr_amostras_media_400, 'DEPOSICAO_ALEATORIA_RELAXACAO_SUPERFICIAL_400')
 cria_csv(arr_amostras_media_200, 'DEPOSICAO_ALEATORIA_RELAXACAO_SUPERFICIAL_200')
-
+cria_csv(arr_amostras_media_200_db, 'DEPOSICAO_BALISTICA_200')
 
 
 gera_grafico_rugosidade('', 'rugosidade_DEPOSICAO_ALEATORIA_RELAXACAO_SUPERFICIAL')
+gera_grafico_rugosidade('', 'rugosidade_DEPOSICAO_BALISTICA')
 
 
 # plt.xscale("log")
